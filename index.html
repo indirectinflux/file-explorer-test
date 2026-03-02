@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ROBCO INDUSTRIES TERMLINK</title>
+<title>DARODUNE TERMLINK</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 
 :root {
-  --g: #50fa7b;       /* main green */
-  --gd: #2ecc52;      /* slightly dimmer */
-  --gb: #1a7a32;      /* dark green for dim text */
+  --b: #4a9eff;
+  --bd: #2d6cc4;
+  --bb: #0d2a5e;
   --bg: #000000;
 }
 
@@ -19,12 +19,11 @@ html, body {
   width:100%; height:100%;
   background: var(--bg);
   font-family: 'Share Tech Mono', 'Courier New', monospace;
-  color: var(--g);
+  color: var(--b);
   overflow: hidden;
   cursor: none;
 }
 
-/* CRT screen wrapper */
 #screen {
   position: fixed;
   inset: 0;
@@ -34,33 +33,26 @@ html, body {
   background: #000;
 }
 
-/* Vignette */
 #screen::after {
   content:'';
-  position:fixed;
-  inset:0;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.85) 100%);
-  pointer-events:none;
-  z-index:50;
+  position:fixed; inset:0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,10,0.88) 100%);
+  pointer-events:none; z-index:50;
 }
 
-/* Scanlines */
 #screen::before {
   content:'';
-  position:fixed;
-  inset:0;
+  position:fixed; inset:0;
   background: repeating-linear-gradient(
     0deg,
     rgba(0,0,0,0) 0px,
     rgba(0,0,0,0) 1px,
-    rgba(0,0,0,0.25) 1px,
-    rgba(0,0,0,0.25) 2px
+    rgba(0,0,0,0.22) 1px,
+    rgba(0,0,0,0.22) 2px
   );
-  pointer-events:none;
-  z-index:51;
+  pointer-events:none; z-index:51;
 }
 
-/* Main terminal text area */
 #terminal {
   position: relative;
   z-index: 10;
@@ -69,101 +61,77 @@ html, body {
   padding: 48px 60px;
   display: flex;
   flex-direction: column;
-  gap: 0;
   font-size: clamp(11px, 1.4vw, 16px);
   line-height: 1.55;
-  text-shadow: 0 0 6px rgba(80,250,123,0.7);
+  text-shadow: 0 0 6px rgba(74,158,255,0.7);
 }
 
-/* Phosphor glow flicker */
-@keyframes phosphor {
-  0%,100%{opacity:1} 92%{opacity:0.96} 95%{opacity:0.98}
-}
+@keyframes phosphor { 0%,100%{opacity:1} 92%{opacity:0.96} 95%{opacity:0.98} }
 #terminal { animation: phosphor 6s infinite; }
 
-/* Blinking cursor */
 @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
 .cursor {
   display:inline-block;
   width:0.55em; height:1em;
-  background:var(--g);
+  background:var(--b);
   vertical-align:text-bottom;
   animation: blink 1.1s infinite;
-  box-shadow: 0 0 6px rgba(80,250,123,0.8);
+  box-shadow: 0 0 6px rgba(74,158,255,0.8);
 }
 
-.dim { color: var(--gb); text-shadow: 0 0 4px rgba(80,250,123,0.2); }
-.bright { color: #80ffaa; text-shadow: 0 0 10px rgba(80,250,123,1); }
+.dim { color: var(--bb); text-shadow: 0 0 4px rgba(74,158,255,0.15); }
+.bright { color: #a0c8ff; text-shadow: 0 0 10px rgba(74,158,255,1); }
 
-/* Header block */
 #header { margin-bottom: 1.2em; }
 #header .line { letter-spacing: 0.04em; }
 
-/* Divider */
-.divider { color: var(--gb); letter-spacing:0; margin: 0.3em 0; }
+.divider { color: var(--bb); margin: 0.3em 0; }
 
-/* Menu items */
 .menu-item {
   cursor: none;
   padding: 0.05em 0;
   letter-spacing: 0.03em;
-  transition: color 0.05s;
   display: flex;
   align-items: baseline;
   gap: 0.5em;
 }
-.menu-item .arrow { opacity:0; color: var(--g); }
+.menu-item .arrow { opacity:0; color: var(--b); }
 .menu-item.selected .arrow { opacity:1; }
-.menu-item.selected { color: #b0ffe0; text-shadow: 0 0 14px rgba(80,250,123,1); }
-.menu-item:hover { color: #b0ffe0; }
+.menu-item.selected { color: #b8d8ff; text-shadow: 0 0 14px rgba(74,158,255,1); }
+.menu-item:hover { color: #b8d8ff; }
 .menu-item:hover .arrow { opacity:1; }
 
-/* Content view */
-#content-view {
-  display:none;
-  flex-direction:column;
-  gap:0;
-  flex:1;
-  overflow:hidden;
-}
+#content-view { display:none; flex-direction:column; flex:1; overflow:hidden; }
 #content-view.active { display:flex; }
-#menu-view {
-  display:flex;
-  flex-direction:column;
-  gap:0;
-}
+#menu-view { display:flex; flex-direction:column; }
 
-/* Entry text */
 .entry-header { margin-bottom:0.8em; }
-.entry-body { color: var(--gd); line-height:1.7; max-width: 72ch; }
+.entry-body { color: var(--bd); line-height:1.7; max-width:72ch; }
 .entry-body p { margin-bottom:0.8em; }
 
-/* Back prompt */
-.back-prompt { margin-top:1.5em; color: var(--gb); }
-.back-prompt span { color: var(--g); }
+.back-prompt { margin-top:1.5em; color: var(--bb); }
+.back-prompt span { color: var(--b); }
 
-/* Boot sequence */
+/* Boot */
 #boot {
   position:fixed; inset:0; background:#000;
   display:flex; flex-direction:column; justify-content:flex-start;
   padding: 48px 60px;
   font-family:'Share Tech Mono','Courier New',monospace;
   font-size: clamp(11px,1.4vw,16px);
-  color:var(--g);
+  color:var(--b);
   z-index:200;
-  text-shadow: 0 0 6px rgba(80,250,123,0.7);
+  text-shadow: 0 0 6px rgba(74,158,255,0.7);
   line-height:1.55;
 }
 #boot::before {
-  content:'';
-  position:fixed; inset:0;
-  background: repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 1px,rgba(0,0,0,0.25) 1px,rgba(0,0,0,0.25) 2px);
+  content:''; position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 1px,rgba(0,0,0,0.22) 1px,rgba(0,0,0,0.22) 2px);
   pointer-events:none; z-index:1;
 }
 #boot::after {
-  content:'';
-  position:fixed; inset:0;
-  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.85) 100%);
+  content:''; position:fixed; inset:0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,10,0.88) 100%);
   pointer-events:none; z-index:2;
 }
 #boot-text { position:relative; z-index:3; }
@@ -171,36 +139,31 @@ html, body {
 </head>
 <body>
 
-<!-- Boot screen -->
 <div id="boot">
   <div id="boot-text"></div>
 </div>
 
-<!-- Main terminal -->
 <div id="screen">
 <div id="terminal">
 
-  <!-- Header -->
   <div id="header">
-    <div class="line bright">ROBCO INDUSTRIES (TM) TERMLINK PROTOCOL</div>
-    <div class="line dim">COPYRIGHT 2075-2077 ROBCO INDUSTRIES</div>
+    <div class="line bright">DARODUNE SYSTEMS (TM) TERMLINK PROTOCOL</div>
+    <div class="line dim">COPYRIGHT 2045-2047 DARODUNE SYSTEMS INC.</div>
     <div class="line dim" id="datetime"></div>
-    <div class="line dim">-NETWORK NODE 7734-QUINCY-</div>
+    <div class="line dim">-NETWORK NODE 0019-SECTOR-NINE-</div>
   </div>
 
   <div class="divider dim">================================================================================</div>
 
-  <!-- Main menu view -->
   <div id="menu-view">
     <div style="margin-bottom:0.6em;">
-      <div class="line">WELCOME TO STURGES'S TERMINAL</div>
+      <div class="line">WELCOME TO UNIT 7's TERMINAL</div>
       <div class="line dim" style="margin-top:0.2em;">Select an option:</div>
     </div>
     <div style="height:0.4em;"></div>
     <div id="menu-list"></div>
   </div>
 
-  <!-- Content view -->
   <div id="content-view">
     <div class="entry-header">
       <div class="bright" id="entry-title"></div>
@@ -216,125 +179,128 @@ html, body {
 </div>
 
 <script>
-// ===================== DATA =====================
-// Based on Sturges's Terminal from Quincy Ruins + expanded lore entries
 const entries = [
   {
     id: 'e1',
-    label: "Personal Log - Entry 1",
-    title: "PERSONAL LOG - ENTRY 1",
-    date: "06/02/2077",
+    label: "Incident Log - Node Failure 7734",
+    title: "INCIDENT LOG - NODE FAILURE 7734",
+    date: "03/14/2047",
     body: [
-      "Name's Sturges. Recording this 'cause Mama Murphy said I should keep a record. Don't know why anyone would care but here goes.",
-      "Got into Quincy about three weeks ago. Preston and the others seem decent enough. The settlement's a mess — half the walls are caved in, power grid's been dead since before I got here. Good thing I know my way around a circuit.",
-      "Started mapping out what we've got. Generator salvage is going to be the priority. Can't do anything else without juice.",
-      "Murphy says she's got a feeling about this place. Didn't ask what kind."
+      "We've been trying to figure out the lore for Rathalos for a while now. Why is it a flagship monster? In terms of narrative it doesn't make a lot of sense - a large flying dragon isn't particularly unique. But in terms of gameplay it's because it's the first monster that forces you to pay attention to the sky.",
+      "Before Rathalos every monster is grounded. You can always see them. But Rathalos randomly takes flight, forcing you to watch the sky, bait it into attacking, and repositioning constantly. It's a completely different style of encounter.",
+      "Node 7734 went dark at 03:42 local time. No distress signal. No logged errors. Just nothing. Sector maintenance has been dispatched but we're not expecting much.",
+      "Logging this for the record. Something's off about the whole thing.",
+      "- Unit 7"
     ]
   },
   {
     id: 'e2',
-    label: "Personal Log - Entry 4",
-    title: "PERSONAL LOG - ENTRY 4",
-    date: "06/18/2077",
+    label: "Personal Log - Thoughts on the Grid",
+    title: "PERSONAL LOG - THOUGHTS ON THE GRID",
+    date: "01/08/2046",
     body: [
-      "Fixed the south generator today. Took most of the morning and half my spare wire, but she's running now. Lights in the lower block are back on.",
-      "Quincy's a harder fix than I expected. Lot of the old infrastructure got blown apart in fighting I don't want to think about. Some of the structural damage is load-bearing — can't just patch it, got to reinforce it right or the whole section comes down.",
-      "Preston's good people. Keeps the mood up. Don't know how he does it looking at what we're working with.",
-      "Ran into Jun Long today. Guy's carrying something heavy. Gave him space."
+      "shrek is a story about how society's treatment of Shrek is actually justified and how Shrek was wrong. shrek terrorizes the local village and has done so for years, for no other reason than that he doesn't like being bothered. this is presented as reasonable.",
+      "the townspeople are so afraid of him they send armed escorts when he shows up at their doors. Lord Farquaad is presented as the villain for wanting to relocate dangerous magical creatures that were disrupting society.",
+      "honestly when you think about it from a grid infrastructure perspective it tracks. the nodes that cause the most disruption are always the ones that claim self-determination as a defense.",
+      "anyway the grid's been unstable since tuesday. not my problem technically. logging it anyway.",
     ]
   },
   {
     id: 'e3',
-    label: "Personal Log - Entry 9",
-    title: "PERSONAL LOG - ENTRY 9",
-    date: "07/04/2077",
+    label: "Sector Nine - Maintenance Report",
+    title: "SECTOR NINE - MAINTENANCE REPORT",
+    date: "02/22/2047",
     body: [
-      "Happy Independence Day to whoever's reading this. We celebrated with a dinner that was mostly brahmin stew and old world bourbon Mama Murphy had stashed somewhere.",
-      "Got the water pump running. That's the big one. People have been hauling water from half a mile out — now they don't have to.",
-      "Still picking up strange signals on the long-range receiver I put together. Mostly static. Occasionally something that sounds almost like a voice. Can't pin a source.",
-      "Marcy Long had a real bad night. I stayed up late working on the comms rig just to give her some space. Don't know what to say to someone like that. Never have."
+      "POWER GRID:          NOMINAL / 94% OUTPUT",
+      "DATA RELAYS:         3 OF 4 ONLINE / NODE 7734 OFFLINE",
+      "SURVEILLANCE NET:    ACTIVE / 2 BLIND SPOTS LOGGED",
+      "CITIZEN COMPLIANCE:  97.3% / WITHIN ACCEPTABLE PARAMETERS",
+      "",
+      "ANOMALIES:",
+      "  - Unauthorized signal detected on frequency 88.9 for ~4 minutes on 02/19",
+      "  - Two residents in Block C flagged for 'extended unmonitored period'",
+      "  - Vending unit 14 has dispensed 3 incorrect items this week",
+      "",
+      "NOTES: Everything is fine. Everything has always been fine. Please disregard the anomalies section if you do not have clearance level 4 or above. Thank you for your cooperation.",
+      "",
+      "- Automated Maintenance System v2.9"
     ]
   },
   {
     id: 'e4',
-    label: "Settlement Status - Systems",
-    title: "SETTLEMENT STATUS - SYSTEMS REPORT",
-    date: "07/12/2077",
+    label: "Intercepted Transmission - Unknown",
+    title: "INTERCEPTED TRANSMISSION - UNVERIFIED SOURCE",
+    date: "02/19/2047",
     body: [
-      "POWER:       SOUTH GENERATOR ONLINE / NORTH GENERATOR OFFLINE",
-      "             Est. repair time: 2-3 days pending parts",
+      "Did you ever hear the tragedy of Darth Plagueis the Wise? I thought not. It's not a story the Jedi would tell you. It's a Sith legend.",
+      "Darth Plagueis was a Dark Lord of the Sith, so powerful and so wise he could use the Force to influence the midichlorians to create life. He had such a knowledge of the dark side that he could even keep the ones he cared about from dying.",
+      "The dark side of the Force is a pathway to many abilities some consider to be unnatural.",
+      "He became so powerful... the only thing he was afraid of was losing his power, which eventually, of course, he did.",
+      "Unfortunately, he taught his apprentice everything he knew, then his apprentice killed him in his sleep.",
+      "Ironic. He could save others from death, but not himself.",
       "",
-      "WATER:       PUMP ONLINE / Output: ~28 units/day",
-      "             Sufficient for current population",
-      "",
-      "DEFENSES:    PERIMETER INCOMPLETE",
-      "             East wall: STRUCTURALLY UNSOUND",
-      "             Turret installation: PENDING POWER UPGRADE",
-      "",
-      "COMMS:       LOCAL RADIO: ONLINE",
-      "             Long-range beacon: PARTIALLY FUNCTIONAL",
-      "",
-      "NOTES: East wall is my main concern. If anyone comes at us from that side we're going to have a problem. Need material and manpower. Both in short supply."
+      "SOURCE: UNKNOWN / FREQUENCY: 88.9 / DURATION: 4m 12s / ORIGIN: UNRESOLVED",
+      "STATUS: FLAGGED FOR REVIEW"
     ]
   },
   {
     id: 'e5',
-    label: "Personal Log - Entry 14",
-    title: "PERSONAL LOG - ENTRY 14",
-    date: "07/29/2077",
+    label: "Personal Log - The Dream Again",
+    title: "PERSONAL LOG - THE DREAM AGAIN",
+    date: "03/01/2047",
     body: [
-      "Gunners have been spotted on the southern road. Three sightings in two days. Preston's talking about posting lookouts.",
-      "I don't like it. Quincy's not invisible — anyone with eyes on a map knows there's a settlement here. Question is whether we look worth hitting.",
-      "Worked on the east wall today. Got three more sections reinforced. Not enough.",
-      "There's a part of me that knows how this goes. Seen it before. A place starts to work, starts to feel real, and then something breaks it. I'm going to do everything I can to make sure that's not what happens here.",
-      "I'm going to do everything I can."
+      "I keep having this dream where I'm in a supermarket but all the products have faces and they're all looking at me. Not with malice. Just... looking. Like they're waiting for me to pick them up.",
+      "I think it's the surveillance quotas. 97.3% compliance sounds good until you realize what the 2.7% represents. In Sector Nine alone that's about 340 people doing something unmonitored right now. What are they doing.",
+      "What am I doing.",
+      "Logged 14 hours today. Maintenance cycle completed. Anomalies noted and ignored per standing orders. Everything is fine.",
+      "Going to sleep now. Probably the dream again.",
+      "- Unit 7"
     ]
   },
   {
     id: 'e6',
-    label: "Parts Requisition - July",
-    title: "PARTS REQUISITION - JULY 2077",
-    date: "07/15/2077",
+    label: "Notice - DaroDune Policy Update",
+    title: "NOTICE - DARODUNE POLICY UPDATE 2047-09",
+    date: "03/10/2047",
     body: [
-      "ITEMS NEEDED / PRIORITY ORDER:",
+      "Attention all terminal operators.",
+      "Effective immediately, the following activities are to be logged as Priority 2 anomalies rather than Priority 3:",
       "",
-      "  - Copper wiring (high) ............... ~40 units",
-      "  - Ceramic insulators ................. 12 units",
-      "  - Rubber tubing ...................... 6 ft",
-      "  - Aluminum sheeting .................. need as much as we can get",
-      "  - Ballistic fiber .................... any",
-      "  - Adhesive ........................... running low, critical",
-      "  - Circuitry boards (pre-war) ......... 4+ units",
-      "  - Screws ............................. bring all you can find",
+      "  - Humming without a registered tune license",
+      "  - Looking at the sky for more than 90 consecutive seconds",
+      "  - Referring to pre-2039 geographic names",
+      "  - Possession of physical paper",
+      "  - Laughing alone",
       "",
-      "Scavenging parties — please check the hardware district south of the old highway. There's an industrial building on the corner that I haven't fully cleared out yet. Should have most of the above.",
+      "DaroDune Systems reminds all citizens that compliance is comfort. The network exists to protect you. Your data is our priority. Your priority is our data.",
       "",
-      "- Sturges"
+      "Thank you for your continued cooperation.",
+      "",
+      "DARODUNE SYSTEMS INC. — BUILDING TOMORROW, MONITORING TODAY (TM)"
     ]
   },
   {
     id: 'e7',
-    label: "Note - To Whoever Finds This",
-    title: "NOTE - TO WHOEVER FINDS THIS",
-    date: "08/01/2077",
+    label: "Note - To Whoever Reads This",
+    title: "NOTE - TO WHOEVER READS THIS",
+    date: "03/13/2047",
     body: [
-      "If you're reading this and we're not here anymore, I'm sorry.",
-      "We tried to make something good in Quincy. Lot of people put real work into this place. Preston, Mama Murphy, the Longs, all the others.",
-      "If it went wrong, it wasn't for lack of trying.",
-      "The generator schematics are in the locked box under the workbench. The water pump runs on a 3-second reset cycle if it kicks out — there's a secondary switch behind the left panel.",
-      "Take care of what's left here if you can.",
-      "If you're from the Minutemen, we tried to do you proud.",
+      "If you're reading this, I'm probably gone. Not dead-gone. Just... reassigned. Which in Sector Nine means the same thing but with more paperwork.",
+      "I left this terminal unlocked on purpose. The maintenance logs are real. The anomalies are real. Node 7734 didn't fail — it was shut down because of what it was routing.",
+      "I don't know what was on those packets. I know I wasn't supposed to see the metadata. I know I wasn't supposed to log that I saw it. I logged it anyway. You're reading it now.",
+      "Do something with that or don't. I'm not your conscience.",
+      "The vending machine really does just give out the wrong stuff though. That part was never suspicious. It's just broken.",
       "",
-      "- Sturges"
+      "- Unit 7",
+      "",
+      ">>_"
     ]
   }
 ];
 
-// ===================== STATE =====================
 let selectedIdx = 0;
 let inEntry = false;
 
-// ===================== RENDER =====================
 function getDateString() {
   const d = new Date();
   return String(d.getMonth()+1).padStart(2,'0') + '/' +
@@ -357,25 +323,16 @@ function renderMenu() {
   `).join('');
 }
 
-function selectEntry(idx) {
-  selectedIdx = idx;
-  openEntry();
-}
+function selectEntry(idx) { selectedIdx = idx; openEntry(); }
 
 function openEntry() {
   const e = entries[selectedIdx];
   inEntry = true;
-
   document.getElementById('menu-view').style.display = 'none';
   const cv = document.getElementById('content-view');
   cv.classList.add('active');
-
   document.getElementById('entry-title').textContent = e.title + ' [' + e.date + ']';
-
-  const body = e.body.map(line => {
-    if (line === '') return '<br>';
-    return '<p>' + line + '</p>';
-  }).join('');
+  const body = e.body.map(line => line === '' ? '<br>' : '<p>' + line + '</p>').join('');
   document.getElementById('entry-body').innerHTML = body;
 }
 
@@ -386,7 +343,6 @@ function closeEntry() {
   renderMenu();
 }
 
-// ===================== KEYBOARD =====================
 document.addEventListener('keydown', e => {
   if (inEntry) {
     if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); closeEntry(); }
@@ -406,19 +362,20 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// ===================== BOOT =====================
+// Boot
 const bootLines = [
   '',
-  'ROBCO INDUSTRIES (TM) TERMLINK PROTOCOL',
-  'COPYRIGHT 2075-2077 ROBCO INDUSTRIES',
+  'DARODUNE SYSTEMS (TM) TERMLINK PROTOCOL',
+  'COPYRIGHT 2045-2047 DARODUNE SYSTEMS INC.',
   '',
   'INITIALIZING UNIFIED OPERATING SYSTEM...',
-  'CHECKING MEMORY...              [ OK ]',
-  'CHECKING STORAGE DRIVES...      [ OK ]',
-  'CHECKING NETWORK NODE...        [ OK ]',
-  'MOUNTING FILESYSTEM...          [ OK ]',
+  'VERIFYING OPERATOR CREDENTIALS...      [ OK ]',
+  'CHECKING MEMORY ALLOCATION...          [ OK ]',
+  'MOUNTING SECURE FILESYSTEM...          [ OK ]',
+  'SYNCING WITH DARODUNE NETWORK...       [ OK ]',
+  'COMPLIANCE MODULE LOADED...            [ OK ]',
   '',
-  'WELCOME BACK.',
+  'WELCOME BACK, UNIT 7.',
   '',
   '>>_',
 ];
@@ -430,7 +387,7 @@ function bootStep() {
   if (bi < bootLines.length) {
     const div = document.createElement('div');
     div.textContent = bootLines[bi];
-    if (bootLines[bi].includes('ROBCO')) div.style.cssText = 'color:#80ffaa;text-shadow:0 0 10px rgba(80,250,123,1)';
+    if (bootLines[bi].includes('DARODUNE SYSTEMS (TM)')) div.style.cssText = 'color:#a0c8ff;text-shadow:0 0 10px rgba(74,158,255,1)';
     bootEl.appendChild(div);
     bi++;
     const delay = bootLines[bi-1] === '' ? 80 : bootLines[bi-1].includes('...') ? 180 : 120;
@@ -440,10 +397,7 @@ function bootStep() {
       const boot = document.getElementById('boot');
       boot.style.transition = 'opacity 0.3s';
       boot.style.opacity = '0';
-      setTimeout(() => {
-        boot.style.display = 'none';
-        renderMenu();
-      }, 300);
+      setTimeout(() => { boot.style.display = 'none'; renderMenu(); }, 300);
     }, 600);
   }
 }
