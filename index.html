@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Explorer Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #1a1a2e;
+    font-family: 'Courier New', monospace;
+    color: #c9d1d9;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Title bar */
+  .titlebar {
+    background: #0d1117;
+    border-bottom: 1px solid #30363d;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #8b949e;
+    user-select: none;
+  }
+  .titlebar-dots { display: flex; gap: 6px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .dot.red { background: #ff5f57; }
+  .dot.yellow { background: #febc2e; }
+  .dot.green { background: #28c840; }
+  .titlebar-title { margin-left: 8px; }
+
+  /* Toolbar */
+  .toolbar {
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-nav {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #8b949e;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+  }
+  .btn-nav:hover { background: #30363d; color: #c9d1d9; }
+  .btn-nav:disabled { opacity: 0.3; cursor: default; }
+  .addressbar {
+    flex: 1;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #79c0ff;
+  }
+
+  /* Main layout */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    width: 200px;
+    background: #0d1117;
+    border-right: 1px solid #30363d;
+    padding: 12px 8px;
+    overflow-y: auto;
+    flex-shrink: 0;
+  }
+  .sidebar-section { margin-bottom: 16px; }
+  .sidebar-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #484f58;
+    padding: 0 8px;
+    margin-bottom: 6px;
+  }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #8b949e;
+    transition: all 0.1s;
+  }
+  .sidebar-item:hover { background: #161b22; color: #c9d1d9; }
+  .sidebar-item.active { background: #1f2937; color: #79c0ff; }
+
+  /* Content area */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #0d1117;
+  }
+
+  /* Breadcrumb */
+  .breadcrumb {
+    font-size: 12px;
+    color: #484f58;
+    margin-bottom: 20px;
+  }
+  .breadcrumb span { color: #79c0ff; cursor: pointer; }
+  .breadcrumb span:hover { text-decoration: underline; }
+
+  /* File grid */
+  .file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 16px;
+  }
+
+  .file-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+    text-align: center;
+  }
+  .file-item:hover {
+    background: #161b22;
+    border-color: #30363d;
+  }
+  .file-item:active { transform: scale(0.97); }
+
+  .file-icon { font-size: 40px; margin-bottom: 8px; line-height: 1; }
+  .file-name {
+    font-size: 11px;
+    color: #c9d1d9;
+    word-break: break-word;
+    line-height: 1.3;
+  }
+  .file-item.folder .file-name { color: #e3b341; }
+
+  /* Status bar */
+  .statusbar {
+    background: #161b22;
+    border-top: 1px solid #30363d;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: #484f58;
+    display: flex;
+    gap: 20px;
+  }
+
+  /* Modal / file viewer */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    width: 600px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    animation: modalIn 0.15s ease;
+  }
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal-header {
+    background: #0d1117;
+    border-bottom: 1px solid #30363d;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: 8px 8px 0 0;
+    font-size: 13px;
+    color: #8b949e;
+  }
+  .modal-close {
+    cursor: pointer;
+    color: #8b949e;
+    font-size: 18px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+  .modal-close:hover { background: #30363d; color: #ff5f57; }
+  .modal-body {
+    padding: 20px;
+    overflow-y: auto;
+    font-size: 13px;
+    line-height: 1.7;
+    color: #c9d1d9;
+    flex: 1;
+  }
+  .modal-body h2 { color: #79c0ff; margin-bottom: 12px; font-size: 16px; }
+  .modal-body p { margin-bottom: 10px; color: #8b949e; }
+  .modal-body .tag {
+    display: inline-block;
+    background: #1f2937;
+    border: 1px solid #30363d;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    color: #58a6ff;
+    margin: 2px;
+  }
+  .modal-body .redacted {
+    background: #c9d1d9;
+    color: #c9d1d9;
+    border-radius: 2px;
+    user-select: none;
+  }
+  .stamp {
+    display: inline-block;
+    border: 2px solid #f85149;
+    color: #f85149;
+    padding: 2px 10px;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transform: rotate(-3deg);
+    margin-bottom: 12px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<!-- Title bar -->
+<div class="titlebar">
+  <div class="titlebar-dots">
+    <div class="dot red"></div>
+    <div class="dot yellow"></div>
+    <div class="dot green"></div>
+  </div>
+  <div class="titlebar-title">File Explorer</div>
+</div>
+
+<!-- Toolbar -->
+<div class="toolbar">
+  <button class="btn-nav" id="btnBack" onclick="goBack()" disabled>◀</button>
+  <button class="btn-nav" id="btnFwd" onclick="goForward()" disabled>▶</button>
+  <button class="btn-nav" onclick="goHome()">⌂</button>
+  <input class="addressbar" id="addressbar" readonly value="Home" />
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Quick Access</div>
+      <div class="sidebar-item active" onclick="goHome()">🏠 Home</div>
+      <div class="sidebar-item" onclick="navigate('case-files')">📁 Case Files</div>
+      <div class="sidebar-item" onclick="navigate('evidence')">📁 Evidence</div>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Tags</div>
+      <div class="sidebar-item">🔴 Classified</div>
+      <div class="sidebar-item">🟡 Pending</div>
+      <div class="sidebar-item">🟢 Cleared</div>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+    <!-- Injected by JS -->
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="statusbar">
+  <span id="statusCount">6 items</span>
+  <span id="statusPath">Home</span>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <span id="modalTitle">File</span>
+      <span class="modal-close" onclick="closeModalDirect()">✕</span>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+  // --- Data structure ---
+  const fs = {
+    home: {
+      label: 'Home',
+      path: 'Home',
+      items: [
+        { type: 'folder', name: 'Case Files', id: 'case-files', icon: '📁' },
+        { type: 'folder', name: 'Evidence', id: 'evidence', icon: '📁' },
+        { type: 'folder', name: 'Personnel', id: 'personnel', icon: '📁' },
+        { type: 'file', name: 'README.txt', id: 'readme', icon: '📄' },
+        { type: 'file', name: 'Mission Brief', id: 'mission', icon: '📋' },
+        { type: 'file', name: 'Incident Log', id: 'incident', icon: '🗒️' },
+      ]
+    },
+    'case-files': {
+      label: 'Case Files',
+      path: 'Home > Case Files',
+      parent: 'home',
+      items: [
+        { type: 'file', name: 'Case #001', id: 'case001', icon: '🔍' },
+        { type: 'file', name: 'Case #002', id: 'case002', icon: '🔍' },
+        { type: 'file', name: 'Case #003 [SEALED]', id: 'case003', icon: '🔒' },
+        { type: 'folder', name: 'Archived', id: 'archived', icon: '📦' },
+      ]
+    },
+    'evidence': {
+      label: 'Evidence',
+      path: 'Home > Evidence',
+      parent: 'home',
+      items: [
+        { type: 'file', name: 'Photo_001.img', id: 'photo1', icon: '🖼️' },
+        { type: 'file', name: 'Audio_Rec.wav', id: 'audio1', icon: '🎵' },
+        { type: 'file', name: 'Fingerprints', id: 'prints', icon: '👆' },
+      ]
+    },
+    'personnel': {
+      label: 'Personnel',
+      path: 'Home > Personnel',
+      parent: 'home',
+      items: [
+        { type: 'file', name: 'Agent K. Cross', id: 'agent1', icon: '🪪' },
+        { type: 'file', name: 'Agent M. Vance', id: 'agent2', icon: '🪪' },
+        { type: 'file', name: 'REDACTED', id: 'agentX', icon: '⬛' },
+      ]
+    },
+    'archived': {
+      label: 'Archived',
+      path: 'Home > Case Files > Archived',
+      parent: 'case-files',
+      items: [
+        { type: 'file', name: 'Cold Case 1987', id: 'cold1987', icon: '❄️' },
+        { type: 'file', name: 'Cold Case 1994', id: 'cold1994', icon: '❄️' },
+      ]
+    }
+  };
+
+  // --- File content ---
+  const fileContent = {
+    readme: {
+      title: 'README.txt',
+      html: `<h2>Welcome</h2><p>This is a demo file explorer. Click folders to navigate into them. Click files to open them. Use the back button to go back.</p><p>This is the kind of thing you can host on GitHub Pages — it's just one HTML file!</p>`
+    },
+    mission: {
+      title: 'Mission Brief',
+      html: `<div class="stamp">Classified</div><h2>Operation Hollow Point</h2><p>Operative, your mission is to retrieve documents from the <span class="redacted">██████████</span> facility located at <span class="redacted">████████████████</span>.</p><p>Assets will be provided upon arrival. Do not engage unless necessary.</p><span class="tag">Priority: HIGH</span> <span class="tag">Clearance: Level 4</span>`
+    },
+    incident: {
+      title: 'Incident Log',
+      html: `<h2>Incident Log</h2><p><b>03/14</b> — Perimeter breach detected on east wing. Guard rotation adjusted.</p><p><b>03/15</b> — Two agents reported missing. Investigation ongoing.</p><p><b>03/16</b> — <span class="redacted">████████████████████████████</span></p><p><b>03/17</b> — All clear issued by command.</p>`
+    },
+    case001: {
+      title: 'Case #001 — The Vanishing',
+      html: `<div class="stamp">Open</div><h2>Case #001 — The Vanishing</h2><p>Three individuals reported missing within a 6-block radius. No witnesses. Surveillance footage shows subjects walking into frame and simply <i>not leaving</i>.</p><p>Forensics found nothing unusual at the scene.</p><span class="tag">Status: Active</span> <span class="tag">Assigned: K. Cross</span>`
+    },
+    case002: {
+      title: 'Case #002 — Signal Anomaly',
+      html: `<div class="stamp">Pending</div><h2>Case #002 — Signal Anomaly</h2><p>Radio operators in sector 7 reported a recurring signal on a frequency that, according to regulations, does not exist.</p><p>Signal content: <code>01001000 01100101 01101100 01110000</code></p><span class="tag">Status: Pending</span>`
+    },
+    case003: {
+      title: 'Case #003 [SEALED]',
+      html: `<div class="stamp">Sealed</div><h2>ACCESS RESTRICTED</h2><p>You do not have clearance to view this file.</p><p>Contact your supervising agent to request elevated access.</p><span class="tag">Clearance Required: Level 5+</span>`
+    },
+    photo1: {
+      title: 'Photo_001.img',
+      html: `<h2>Evidence Photo #001</h2><p>Image captured at 02:14 AM at the scene.</p><div style="background:#0d1117;border:1px solid #30363d;border-radius:4px;height:120px;display:flex;align-items:center;justify-content:center;color:#484f58;font-size:12px;">[ Image data corrupted — recovery pending ]</div>`
+    },
+    audio1: {
+      title: 'Audio_Rec.wav',
+      html: `<h2>Audio Recording</h2><p>Duration: 4:32 — Recorded during field op on 03/15.</p><div style="background:#0d1117;border:1px solid #30363d;border-radius:4px;padding:16px;margin-top:8px;"><div style="height:40px;background:repeating-linear-gradient(90deg,#1f6feb 0px,#1f6feb 2px,#0d1117 2px,#0d1117 6px);border-radius:2px;opacity:0.6;"></div><p style="font-size:11px;color:#484f58;margin-top:8px;text-align:center;">[ Playback unavailable in this environment ]</p></div>`
+    },
+    prints: {
+      title: 'Fingerprint Analysis',
+      html: `<h2>Fingerprint Analysis</h2><p>Lifted from door handle — east wing exit.</p><p>Match found in database: <span class="redacted">████████████</span></p><span class="tag">Confidence: 94.2%</span> <span class="tag">Lab: Forensics Unit B</span>`
+    },
+    agent1: {
+      title: 'Agent K. Cross',
+      html: `<h2>Agent K. Cross</h2><p><b>Clearance:</b> Level 4</p><p><b>Status:</b> Active</p><p><b>Specialization:</b> Field Ops, Reconnaissance</p><p><b>Notes:</b> Exemplary record. Recommended for promotion pending review.</p><span class="tag">Unit: Delta</span>`
+    },
+    agent2: {
+      title: 'Agent M. Vance',
+      html: `<h2>Agent M. Vance</h2><p><b>Clearance:</b> Level 3</p><p><b>Status:</b> On Leave</p><p><b>Specialization:</b> Analysis, Cryptography</p><p><b>Notes:</b> Currently on administrative leave pending internal review.</p><span class="tag">Unit: Intel</span>`
+    },
+    agentX: {
+      title: 'REDACTED',
+      html: `<div class="stamp">Sealed</div><h2><span class="redacted">████████████████</span></h2><p><span class="redacted">███████████████████████████████████████████████████████████████</span></p><p><span class="redacted">████████████████████████████████████</span></p><span class="tag">Eyes Only</span>`
+    },
+    cold1987: {
+      title: 'Cold Case — 1987',
+      html: `<div class="stamp">Cold</div><h2>Cold Case — 1987</h2><p>Seven disappearances over 14 months. No suspects charged. Primary investigator retired in 1989, citing "personal reasons."</p><p>File flagged for re-review in 2024. Review has not yet occurred.</p>`
+    },
+    cold1994: {
+      title: 'Cold Case — 1994',
+      html: `<div class="stamp">Cold</div><h2>Cold Case — 1994</h2><p>Industrial facility incident. Official report lists cause as "equipment failure." Three independent witnesses dispute this finding.</p><p>Witnesses are currently <span class="redacted">██████████████</span>.</p>`
+    },
+  };
+
+  // --- Navigation state ---
+  let history = ['home'];
+  let historyIndex = 0;
+  let currentDir = 'home';
+
+  function renderDir(dirId) {
+    const dir = fs[dirId];
+    if (!dir) return;
+    currentDir = dirId;
+
+    document.getElementById('addressbar').value = dir.path;
+    document.getElementById('statusPath').textContent = dir.path;
+    document.getElementById('statusCount').textContent = dir.items.length + ' items';
+
+    // Breadcrumb
+    let breadcrumb = dir.path.split(' > ').map((p, i, arr) => {
+      if (i === arr.length - 1) return `<b style="color:#c9d1d9">${p}</b>`;
+      return `<span>${p}</span>`;
+    }).join(' <span style="color:#484f58"> > </span> ');
+
+    // Items
+    let items = dir.items.map(item => `
+      <div class="file-item ${item.type}" onclick="${item.type === 'folder' ? `navigate('${item.id}')` : `openFile('${item.id}')`}">
+        <div class="file-icon">${item.icon}</div>
+        <div class="file-name">${item.name}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('content').innerHTML = `
+      <div class="breadcrumb">${breadcrumb}</div>
+      <div class="file-grid">${items}</div>
+    `;
+
+    document.getElementById('btnBack').disabled = historyIndex <= 0;
+    document.getElementById('btnFwd').disabled = historyIndex >= history.length - 1;
+  }
+
+  function navigate(dirId) {
+    history = history.slice(0, historyIndex + 1);
+    history.push(dirId);
+    historyIndex++;
+    renderDir(dirId);
+  }
+
+  function goBack() {
+    if (historyIndex > 0) { historyIndex--; renderDir(history[historyIndex]); }
+  }
+  function goForward() {
+    if (historyIndex < history.length - 1) { historyIndex++; renderDir(history[historyIndex]); }
+  }
+  function goHome() {
+    history = ['home']; historyIndex = 0; renderDir('home');
+  }
+
+  function openFile(id) {
+    const f = fileContent[id];
+    if (!f) return;
+    document.getElementById('modalTitle').textContent = f.title;
+    document.getElementById('modalBody').innerHTML = f.html;
+    document.getElementById('modalOverlay').classList.add('open');
+  }
+  function closeModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+  }
+  function closeModalDirect() {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModalDirect(); });
+
+  // Init
+  renderDir('home');
+</script>
+</body>
+</html>
