@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROBCO INDUSTRIES TERMLINK</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --g: #50fa7b;       /* main green */
+  --gd: #2ecc52;      /* slightly dimmer */
+  --gb: #1a7a32;      /* dark green for dim text */
+  --bg: #000000;
+}
+
+html, body {
+  width:100%; height:100%;
+  background: var(--bg);
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  color: var(--g);
+  overflow: hidden;
+  cursor: none;
+}
+
+/* CRT screen wrapper */
+#screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+/* Vignette */
+#screen::after {
+  content:'';
+  position:fixed;
+  inset:0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.85) 100%);
+  pointer-events:none;
+  z-index:50;
+}
+
+/* Scanlines */
+#screen::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 1px,
+    rgba(0,0,0,0.25) 1px,
+    rgba(0,0,0,0.25) 2px
+  );
+  pointer-events:none;
+  z-index:51;
+}
+
+/* Main terminal text area */
+#terminal {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  padding: 48px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  font-size: clamp(11px, 1.4vw, 16px);
+  line-height: 1.55;
+  text-shadow: 0 0 6px rgba(80,250,123,0.7);
+}
+
+/* Phosphor glow flicker */
+@keyframes phosphor {
+  0%,100%{opacity:1} 92%{opacity:0.96} 95%{opacity:0.98}
+}
+#terminal { animation: phosphor 6s infinite; }
+
+/* Blinking cursor */
+@keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+.cursor {
+  display:inline-block;
+  width:0.55em; height:1em;
+  background:var(--g);
+  vertical-align:text-bottom;
+  animation: blink 1.1s infinite;
+  box-shadow: 0 0 6px rgba(80,250,123,0.8);
+}
+
+.dim { color: var(--gb); text-shadow: 0 0 4px rgba(80,250,123,0.2); }
+.bright { color: #80ffaa; text-shadow: 0 0 10px rgba(80,250,123,1); }
+
+/* Header block */
+#header { margin-bottom: 1.2em; }
+#header .line { letter-spacing: 0.04em; }
+
+/* Divider */
+.divider { color: var(--gb); letter-spacing:0; margin: 0.3em 0; }
+
+/* Menu items */
+.menu-item {
+  cursor: none;
+  padding: 0.05em 0;
+  letter-spacing: 0.03em;
+  transition: color 0.05s;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+}
+.menu-item .arrow { opacity:0; color: var(--g); }
+.menu-item.selected .arrow { opacity:1; }
+.menu-item.selected { color: #b0ffe0; text-shadow: 0 0 14px rgba(80,250,123,1); }
+.menu-item:hover { color: #b0ffe0; }
+.menu-item:hover .arrow { opacity:1; }
+
+/* Content view */
+#content-view {
+  display:none;
+  flex-direction:column;
+  gap:0;
+  flex:1;
+  overflow:hidden;
+}
+#content-view.active { display:flex; }
+#menu-view {
+  display:flex;
+  flex-direction:column;
+  gap:0;
+}
+
+/* Entry text */
+.entry-header { margin-bottom:0.8em; }
+.entry-body { color: var(--gd); line-height:1.7; max-width: 72ch; }
+.entry-body p { margin-bottom:0.8em; }
+
+/* Back prompt */
+.back-prompt { margin-top:1.5em; color: var(--gb); }
+.back-prompt span { color: var(--g); }
+
+/* Boot sequence */
+#boot {
+  position:fixed; inset:0; background:#000;
+  display:flex; flex-direction:column; justify-content:flex-start;
+  padding: 48px 60px;
+  font-family:'Share Tech Mono','Courier New',monospace;
+  font-size: clamp(11px,1.4vw,16px);
+  color:var(--g);
+  z-index:200;
+  text-shadow: 0 0 6px rgba(80,250,123,0.7);
+  line-height:1.55;
+}
+#boot::before {
+  content:'';
+  position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 1px,rgba(0,0,0,0.25) 1px,rgba(0,0,0,0.25) 2px);
+  pointer-events:none; z-index:1;
+}
+#boot::after {
+  content:'';
+  position:fixed; inset:0;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.85) 100%);
+  pointer-events:none; z-index:2;
+}
+#boot-text { position:relative; z-index:3; }
+</style>
+</head>
+<body>
+
+<!-- Boot screen -->
+<div id="boot">
+  <div id="boot-text"></div>
+</div>
+
+<!-- Main terminal -->
+<div id="screen">
+<div id="terminal">
+
+  <!-- Header -->
+  <div id="header">
+    <div class="line bright">ROBCO INDUSTRIES (TM) TERMLINK PROTOCOL</div>
+    <div class="line dim">COPYRIGHT 2075-2077 ROBCO INDUSTRIES</div>
+    <div class="line dim" id="datetime"></div>
+    <div class="line dim">-NETWORK NODE 7734-QUINCY-</div>
+  </div>
+
+  <div class="divider dim">================================================================================</div>
+
+  <!-- Main menu view -->
+  <div id="menu-view">
+    <div style="margin-bottom:0.6em;">
+      <div class="line">WELCOME TO STURGES'S TERMINAL</div>
+      <div class="line dim" style="margin-top:0.2em;">Select an option:</div>
+    </div>
+    <div style="height:0.4em;"></div>
+    <div id="menu-list"></div>
+  </div>
+
+  <!-- Content view -->
+  <div id="content-view">
+    <div class="entry-header">
+      <div class="bright" id="entry-title"></div>
+      <div class="dim divider" style="margin-top:0.3em;">--------------------------------------------------------------------------------</div>
+    </div>
+    <div class="entry-body" id="entry-body"></div>
+    <div class="back-prompt">
+      [ <span>ESC</span> ] Return to Main Menu&nbsp;&nbsp;&nbsp;<span class="cursor"></span>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ===================== DATA =====================
+// Based on Sturges's Terminal from Quincy Ruins + expanded lore entries
+const entries = [
+  {
+    id: 'e1',
+    label: "Personal Log - Entry 1",
+    title: "PERSONAL LOG - ENTRY 1",
+    date: "06/02/2077",
+    body: [
+      "Name's Sturges. Recording this 'cause Mama Murphy said I should keep a record. Don't know why anyone would care but here goes.",
+      "Got into Quincy about three weeks ago. Preston and the others seem decent enough. The settlement's a mess — half the walls are caved in, power grid's been dead since before I got here. Good thing I know my way around a circuit.",
+      "Started mapping out what we've got. Generator salvage is going to be the priority. Can't do anything else without juice.",
+      "Murphy says she's got a feeling about this place. Didn't ask what kind."
+    ]
+  },
+  {
+    id: 'e2',
+    label: "Personal Log - Entry 4",
+    title: "PERSONAL LOG - ENTRY 4",
+    date: "06/18/2077",
+    body: [
+      "Fixed the south generator today. Took most of the morning and half my spare wire, but she's running now. Lights in the lower block are back on.",
+      "Quincy's a harder fix than I expected. Lot of the old infrastructure got blown apart in fighting I don't want to think about. Some of the structural damage is load-bearing — can't just patch it, got to reinforce it right or the whole section comes down.",
+      "Preston's good people. Keeps the mood up. Don't know how he does it looking at what we're working with.",
+      "Ran into Jun Long today. Guy's carrying something heavy. Gave him space."
+    ]
+  },
+  {
+    id: 'e3',
+    label: "Personal Log - Entry 9",
+    title: "PERSONAL LOG - ENTRY 9",
+    date: "07/04/2077",
+    body: [
+      "Happy Independence Day to whoever's reading this. We celebrated with a dinner that was mostly brahmin stew and old world bourbon Mama Murphy had stashed somewhere.",
+      "Got the water pump running. That's the big one. People have been hauling water from half a mile out — now they don't have to.",
+      "Still picking up strange signals on the long-range receiver I put together. Mostly static. Occasionally something that sounds almost like a voice. Can't pin a source.",
+      "Marcy Long had a real bad night. I stayed up late working on the comms rig just to give her some space. Don't know what to say to someone like that. Never have."
+    ]
+  },
+  {
+    id: 'e4',
+    label: "Settlement Status - Systems",
+    title: "SETTLEMENT STATUS - SYSTEMS REPORT",
+    date: "07/12/2077",
+    body: [
+      "POWER:       SOUTH GENERATOR ONLINE / NORTH GENERATOR OFFLINE",
+      "             Est. repair time: 2-3 days pending parts",
+      "",
+      "WATER:       PUMP ONLINE / Output: ~28 units/day",
+      "             Sufficient for current population",
+      "",
+      "DEFENSES:    PERIMETER INCOMPLETE",
+      "             East wall: STRUCTURALLY UNSOUND",
+      "             Turret installation: PENDING POWER UPGRADE",
+      "",
+      "COMMS:       LOCAL RADIO: ONLINE",
+      "             Long-range beacon: PARTIALLY FUNCTIONAL",
+      "",
+      "NOTES: East wall is my main concern. If anyone comes at us from that side we're going to have a problem. Need material and manpower. Both in short supply."
+    ]
+  },
+  {
+    id: 'e5',
+    label: "Personal Log - Entry 14",
+    title: "PERSONAL LOG - ENTRY 14",
+    date: "07/29/2077",
+    body: [
+      "Gunners have been spotted on the southern road. Three sightings in two days. Preston's talking about posting lookouts.",
+      "I don't like it. Quincy's not invisible — anyone with eyes on a map knows there's a settlement here. Question is whether we look worth hitting.",
+      "Worked on the east wall today. Got three more sections reinforced. Not enough.",
+      "There's a part of me that knows how this goes. Seen it before. A place starts to work, starts to feel real, and then something breaks it. I'm going to do everything I can to make sure that's not what happens here.",
+      "I'm going to do everything I can."
+    ]
+  },
+  {
+    id: 'e6',
+    label: "Parts Requisition - July",
+    title: "PARTS REQUISITION - JULY 2077",
+    date: "07/15/2077",
+    body: [
+      "ITEMS NEEDED / PRIORITY ORDER:",
+      "",
+      "  - Copper wiring (high) ............... ~40 units",
+      "  - Ceramic insulators ................. 12 units",
+      "  - Rubber tubing ...................... 6 ft",
+      "  - Aluminum sheeting .................. need as much as we can get",
+      "  - Ballistic fiber .................... any",
+      "  - Adhesive ........................... running low, critical",
+      "  - Circuitry boards (pre-war) ......... 4+ units",
+      "  - Screws ............................. bring all you can find",
+      "",
+      "Scavenging parties — please check the hardware district south of the old highway. There's an industrial building on the corner that I haven't fully cleared out yet. Should have most of the above.",
+      "",
+      "- Sturges"
+    ]
+  },
+  {
+    id: 'e7',
+    label: "Note - To Whoever Finds This",
+    title: "NOTE - TO WHOEVER FINDS THIS",
+    date: "08/01/2077",
+    body: [
+      "If you're reading this and we're not here anymore, I'm sorry.",
+      "We tried to make something good in Quincy. Lot of people put real work into this place. Preston, Mama Murphy, the Longs, all the others.",
+      "If it went wrong, it wasn't for lack of trying.",
+      "The generator schematics are in the locked box under the workbench. The water pump runs on a 3-second reset cycle if it kicks out — there's a secondary switch behind the left panel.",
+      "Take care of what's left here if you can.",
+      "If you're from the Minutemen, we tried to do you proud.",
+      "",
+      "- Sturges"
+    ]
+  }
+];
+
+// ===================== STATE =====================
+let selectedIdx = 0;
+let inEntry = false;
+
+// ===================== RENDER =====================
+function getDateString() {
+  const d = new Date();
+  return String(d.getMonth()+1).padStart(2,'0') + '/' +
+         String(d.getDate()).padStart(2,'0') + '/' +
+         d.getFullYear() + '  ' +
+         String(d.getHours()).padStart(2,'0') + ':' +
+         String(d.getMinutes()).padStart(2,'0') + ':' +
+         String(d.getSeconds()).padStart(2,'0');
+}
+document.getElementById('datetime').textContent = getDateString();
+setInterval(()=>{ document.getElementById('datetime').textContent = getDateString(); }, 1000);
+
+function renderMenu() {
+  const list = document.getElementById('menu-list');
+  list.innerHTML = entries.map((e, i) => `
+    <div class="menu-item ${i===selectedIdx?'selected':''}" onclick="selectEntry(${i})" data-idx="${i}">
+      <span class="arrow">▶</span>
+      <span>${e.label}</span>
+    </div>
+  `).join('');
+}
+
+function selectEntry(idx) {
+  selectedIdx = idx;
+  openEntry();
+}
+
+function openEntry() {
+  const e = entries[selectedIdx];
+  inEntry = true;
+
+  document.getElementById('menu-view').style.display = 'none';
+  const cv = document.getElementById('content-view');
+  cv.classList.add('active');
+
+  document.getElementById('entry-title').textContent = e.title + ' [' + e.date + ']';
+
+  const body = e.body.map(line => {
+    if (line === '') return '<br>';
+    return '<p>' + line + '</p>';
+  }).join('');
+  document.getElementById('entry-body').innerHTML = body;
+}
+
+function closeEntry() {
+  inEntry = false;
+  document.getElementById('content-view').classList.remove('active');
+  document.getElementById('menu-view').style.display = 'flex';
+  renderMenu();
+}
+
+// ===================== KEYBOARD =====================
+document.addEventListener('keydown', e => {
+  if (inEntry) {
+    if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); closeEntry(); }
+    return;
+  }
+  if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+    e.preventDefault();
+    selectedIdx = (selectedIdx - 1 + entries.length) % entries.length;
+    renderMenu();
+  } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+    e.preventDefault();
+    selectedIdx = (selectedIdx + 1) % entries.length;
+    renderMenu();
+  } else if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    openEntry();
+  }
+});
+
+// ===================== BOOT =====================
+const bootLines = [
+  '',
+  'ROBCO INDUSTRIES (TM) TERMLINK PROTOCOL',
+  'COPYRIGHT 2075-2077 ROBCO INDUSTRIES',
+  '',
+  'INITIALIZING UNIFIED OPERATING SYSTEM...',
+  'CHECKING MEMORY...              [ OK ]',
+  'CHECKING STORAGE DRIVES...      [ OK ]',
+  'CHECKING NETWORK NODE...        [ OK ]',
+  'MOUNTING FILESYSTEM...          [ OK ]',
+  '',
+  'WELCOME BACK.',
+  '',
+  '>>_',
+];
+
+let bi = 0;
+const bootEl = document.getElementById('boot-text');
+
+function bootStep() {
+  if (bi < bootLines.length) {
+    const div = document.createElement('div');
+    div.textContent = bootLines[bi];
+    if (bootLines[bi].includes('ROBCO')) div.style.cssText = 'color:#80ffaa;text-shadow:0 0 10px rgba(80,250,123,1)';
+    bootEl.appendChild(div);
+    bi++;
+    const delay = bootLines[bi-1] === '' ? 80 : bootLines[bi-1].includes('...') ? 180 : 120;
+    setTimeout(bootStep, delay + Math.random()*60);
+  } else {
+    setTimeout(() => {
+      const boot = document.getElementById('boot');
+      boot.style.transition = 'opacity 0.3s';
+      boot.style.opacity = '0';
+      setTimeout(() => {
+        boot.style.display = 'none';
+        renderMenu();
+      }, 300);
+    }, 600);
+  }
+}
+
+setTimeout(bootStep, 500);
+</script>
+</body>
+</html>
